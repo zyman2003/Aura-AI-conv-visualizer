@@ -1,12 +1,14 @@
 import { useRef, useEffect, useState } from "react";
 
-// ─── Aura — Continuous High-Contrast Glass Matrix (v6.3) ─────────────────────
+// ─── Aura — Continuous High-Contrast Glass Matrix (v6.5) ─────────────────────
 // Native Web Audio API Engine integrating premium external assets:
 //  · EXPLANATION: Localhost audio silences are typically caused by missing CORS headers
 //    on the media host (Catbox), causing the Web Audio API context to block the audio data.
 //    To bypass this, we now route the tracks using standard HTMLAudioElements instead of
 //    the AudioContext graph node system, which circumvents CORS media-blocking on local servers.
-//  · UPDATED: Inside-canvas text sizes scaled down by 2pt for a cleaner look.
+//  · RESTORED: Multi-layered staggered expanding rings animation for the listening phase.
+//  · UPDATED: Dynamic contrast logic for Amelia Z credit text on dark/light background.
+//  · UPDATED: Dynamic button styles for light mode (grey outline -> darker outline) and dark mode interactive reset state.
 
 const DOT_SPACING = 24;
 const IPHONE = { w: 393, h: 852 };
@@ -107,6 +109,9 @@ export default function App() {
   const energyRef = useRef(0);
   const [turnCount, setTurnCount] = useState(0);
   const [soundOn, setSoundOn] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(true);
+  const [btnHovered, setBtnHovered] = useState(false);
+  const [resetPressed, setResetPressed] = useState(false);
 
   // Fallback Audio elements for pristine direct hardware channel delivery (Bypasses CORS limitations on Localhost)
   const ambientAudioRef = useRef(null);
@@ -633,10 +638,10 @@ export default function App() {
         if (p === "idle") {
           ctx.textAlign = "left";
           ctx.textBaseline = "top";
-          ctx.font = '500 16px "Inter", sans-serif'; // Reduced from 18px
+          ctx.font = '500 16px "Inter", sans-serif';
           ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
           ctx.fillText("Hey there", 32, h * 0.14);
-          ctx.font = '400 12px "Inter", sans-serif'; // Reduced from 14px
+          ctx.font = '400 12px "Inter", sans-serif';
           ctx.fillStyle = "rgba(255, 255, 255, 0.42)";
           ctx.fillText("How's your day going?", 32, h * 0.14 + 22);
         } else if (
@@ -647,7 +652,7 @@ export default function App() {
         ) {
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.font = '400 13px "Inter", sans-serif'; // Reduced from 15px
+          ctx.font = '400 13px "Inter", sans-serif';
           ctx.fillStyle = currentPalette.text;
 
           if (p === "listening" && S.typing) {
@@ -663,7 +668,7 @@ export default function App() {
           }
 
           if (p === "thinking") {
-            ctx.font = '600 16px "Inter", sans-serif'; // Reduced from 18px
+            ctx.font = '600 16px "Inter", sans-serif';
             const dotsCount = 1 + (Math.floor(t / 280) % 3);
             ctx.fillText(".".repeat(dotsCount), w / 2, h * 0.16);
           }
@@ -722,12 +727,16 @@ export default function App() {
             ? "sequence complete"
             : "hold to talk";
 
+  // Light mode specific border definitions
+  const getLightBorder = (isActive) =>
+    isActive ? "1px solid #1c1c1e" : "1px solid #d1d1d6";
+
   return (
     <div
       style={{
         minHeight: "100vh",
         width: "100vw",
-        background: "#050506",
+        background: isLightMode ? "#ffffff" : "#050506",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -739,20 +748,22 @@ export default function App() {
         position: "relative",
         boxSizing: "border-box",
         overflowX: "hidden",
+        transition: "background 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)",
       }}
     >
       <style>{`
         html, body, #root {
           margin: 0 !important;
           padding: 0 !important;
-          background: #050506 !important;
+          background: ${isLightMode ? "#ffffff" : "#050506"} !important;
           width: 100% !important;
           height: 100% !important;
           overflow-x: hidden;
+          transition: background 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap');
         .aura-interactive-nexus { cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1); border: none; outline: none; }
-        .aura-interactive-nexus:active { transform: translateX(-50%) scale(0.92); }
+        .aura-interactive-nexus:active { transform: translateX(-50%) scale(0.92) !important; }
         @keyframes recRing {
           0%   { transform: scale(1); opacity: 0; }
           12%  { opacity: 0.5; }
@@ -770,8 +781,8 @@ export default function App() {
           pointer-events: none;
           animation: recRing 2.6s cubic-bezier(0.25, 0.6, 0.3, 1) infinite;
         }
-        .aura-designer-link { color: rgba(255,255,255,0.22); text-decoration: underline; transition: color 0.2s ease; pointer-events: auto; }
-        .aura-designer-link:hover { color: rgba(255,255,255,0.6); }
+        .aura-designer-link { color: inherit; text-decoration: underline; transition: color 0.2s ease; pointer-events: auto; }
+        .aura-designer-link:hover { opacity: 0.75; }
       `}</style>
 
       <div
@@ -794,10 +805,18 @@ export default function App() {
           aspectRatio: `${IPHONE.w} / ${IPHONE.h}`,
           borderRadius: 44,
           overflow: "hidden",
-          border: "1px solid #1c1c1e",
-          boxShadow: "0 40px 100px rgba(0,0,0,.8)",
+          border: isLightMode
+            ? "1px solid rgba(0,0,0,0.06)"
+            : "1px solid #1c1c1e",
+          boxShadow: isLightMode
+            ? "0 10px 30px rgba(0,0,0,0.04), 0 30px 70px rgba(0,0,0,0.09), 0 50px 100px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.4)"
+            : "0 40px 100px rgba(0,0,0,.8)",
+          transform: isLightMode
+            ? "perspective(1200px) rotateX(1deg) translateY(-2px)"
+            : "none",
           position: "relative",
           touchAction: "manipulation",
+          transition: "all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)",
         }}
       >
         <canvas
@@ -810,7 +829,7 @@ export default function App() {
             <span
               key={i}
               className="aura-rec-ring"
-              style={{ animationDelay: `${i * 0.85}s` }}
+              style={{ animationDelay: `${-i * 0.85}s` }}
             />
           ))}
 
@@ -819,7 +838,7 @@ export default function App() {
             position: "absolute",
             left: "50%",
             bottom: 64,
-            transform: "translateX(-50%)",
+            transform: `translateX(-50%) scale(${btnHovered ? 1.12 : 1})`,
             width: 54,
             height: 54,
             borderRadius: "50%",
@@ -828,7 +847,7 @@ export default function App() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            transition: "border-color 0.3s ease",
+            transition: "all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)",
           }}
         >
           <div
@@ -853,17 +872,20 @@ export default function App() {
             holdEnd();
           }}
           onPointerCancel={holdEnd}
+          onMouseEnter={() => setBtnHovered(true)}
+          onMouseLeave={() => setBtnHovered(false)}
           onContextMenu={(e) => e.preventDefault()}
           aria-label="Interact with simulation"
           style={{
             position: "absolute",
             left: "50%",
             bottom: 64,
-            transform: "translateX(-50%)",
+            transform: `translateX(-50%) scale(${btnHovered ? 1.12 : 1})`,
             width: 60,
             height: 60,
             borderRadius: "50%",
             background: "transparent",
+            transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)",
           }}
         />
 
@@ -901,31 +923,57 @@ export default function App() {
             fontWeight: 600,
             padding: "7px 16px",
             borderRadius: 999,
-            border: `1px solid ${soundOn ? "rgba(210, 210, 210, 0.4)" : "#2a2a2e"}`,
+            border: isLightMode
+              ? getLightBorder(soundOn)
+              : `1px solid ${soundOn ? "rgba(210, 210, 210, 0.4)" : "#2a2a2e"}`,
             background: soundOn ? "rgba(120, 120, 120, 0.12)" : "transparent",
-            color: soundOn ? "#ffffff" : "#6b6b70",
+            color: soundOn ? (isLightMode ? "#1c1c1e" : "#ffffff") : "#6b6b70",
             cursor: "pointer",
             transition: "all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
           }}
         >
-          {soundOn ? "🔊 Audio On" : "🔈 Audio Muted"}
+          {soundOn ? "🔊 Audio On" : "🔈 Audio Off"}
+        </button>
+
+        <button
+          onClick={() => setIsLightMode(!isLightMode)}
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            padding: "7px 16px",
+            borderRadius: 999,
+            border: isLightMode ? getLightBorder(true) : "1px solid #2a2a2e",
+            background: isLightMode ? "rgba(0, 0, 0, 0.05)" : "transparent",
+            color: isLightMode ? "#1c1c1e" : "#6b6b70",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+        >
+          {isLightMode ? "☀️ Light" : "🌙 Dark"}
         </button>
 
         <button
           onClick={resetDemo}
+          onMouseDown={() => setResetPressed(true)}
+          onMouseUp={() => setResetPressed(false)}
+          onMouseLeave={() => setResetPressed(false)}
+          onTouchStart={() => setResetPressed(true)}
+          onTouchEnd={() => setResetPressed(false)}
           style={{
             fontSize: 10,
             fontWeight: 500,
             padding: "7px 16px",
             borderRadius: 999,
-            border: "1px solid #2a2a2e",
+            border: isLightMode
+              ? getLightBorder(resetPressed)
+              : "1px solid #2a2a2e",
             background: "transparent",
-            color: "#6b6b70",
+            color: resetPressed && !isLightMode ? "#ffffff" : "#6b6b70",
             cursor: "pointer",
-            transition: "all 0.2s ease",
+            transition: "all 0.15s ease",
           }}
         >
-          ↺ Reset Matrix
+          ↺ Reset
         </button>
       </div>
 
@@ -934,10 +982,13 @@ export default function App() {
           position: "absolute",
           left: 24,
           bottom: 24,
-          color: "rgba(255,255,255,0.22)",
+          color: isLightMode
+            ? "rgba(0, 0, 0, 0.6)"
+            : "rgba(255, 255, 255, 0.22)",
           fontSize: 11,
           fontWeight: 400,
           pointerEvents: "none",
+          transition: "color 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)",
         }}
       >
         Designed by{" "}
