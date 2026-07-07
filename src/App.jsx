@@ -181,12 +181,12 @@ export default function App() {
     audioCtxRef.current = ctx;
 
     const ambGain = ctx.createGain();
-    ambGain.gain.value = 0.3;
+    ambGain.gain.value = 0.5;
     ambGain.connect(ctx.destination);
     ambientGainRef.current = ambGain;
 
     const vGain = ctx.createGain();
-    vGain.gain.value = 0.55;
+    vGain.gain.value = 0.2;
     vGain.connect(ctx.destination);
     voiceGainRef.current = vGain;
 
